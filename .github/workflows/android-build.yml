@@ -20,10 +20,14 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # Uses the official Gradle action so the build does not depend on a
-      # committed gradle-wrapper.jar binary (see README "Build notes").
+      # Pin to a Gradle version compatible with AGP 8.6.0 / Kotlin 2.0.21.
+      # Without this, the runner's default/latest installed Gradle (e.g. 10.x)
+      # can be picked up instead, which drops deprecated APIs this AGP/Kotlin
+      # combo still relies on and breaks compileDebugKotlin.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
 
       - name: Build Debug APK
         run: gradle assembleDebug --no-daemon
