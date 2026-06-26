@@ -3,28 +3,21 @@ package com.leonoretech.dragonicexplorer.data.local
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import androidx.security.crypto.MasterKeys
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Stores the GitHub Personal Access Token using AES-256 encrypted SharedPreferences.
- * The token is never logged, never sent to any host other than api.github.com
- * (see AuthInterceptor), and is excluded from backups (see data_extraction_rules.xml).
- */
 @Singleton
 class SecureTokenStore @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context
 ) {
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val masterKeyAlias: String = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
 
     private val prefs: SharedPreferences = EncryptedSharedPreferences.create(
+        PREFS_FILE_NAME,
+        masterKeyAlias,
         context,
-        "dragonic_secure_prefs",
-        masterKey,
         EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
@@ -40,6 +33,7 @@ class SecureTokenStore @Inject constructor(
     }
 
     companion object {
+        private const val PREFS_FILE_NAME = "dragonic_secure_prefs"
         private const val KEY_TOKEN = "github_pat"
     }
 }
