@@ -1,0 +1,45 @@
+name: Website Analysis
+
+# Triggered exclusively via workflow_dispatch by Dragonic Source Explorer
+# (POST /repos/{owner}/{repo}/actions/workflows/website-analysis.yml/dispatches).
+on:
+  workflow_dispatch:
+    inputs:
+      website_url:
+        description: 'Public website URL to analyze'
+        required: true
+        type: string
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run website analysis
+        env:
+          TARGET_URL: ${{ inputs.website_url }}
+        run: python scripts/analyze_website.py
+
+      - name: Package report
+        run: |
+          mkdir -p artifact-output
+          cp report/*.json artifact-output/ 2>/dev/null || true
+          cp report/*.html artifact-output/ 2>/dev/null || true
+          cd artifact-output && zip -r ../website-analysis-report.zip .
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-analysis-${{ github.run_number }}
+          path: website-analysis-report.zip
+          retention-days: 30
